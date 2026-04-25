@@ -122,18 +122,37 @@ tbody tr.invalid td { opacity: 0.35; }
 
     <div class="section-label">Coach</div>
     <div class="field">
-      <label>Coach name (exactly as in chat export)</label>
-      <input type="text" id="coachName" placeholder="e.g. Aishwarya LivEzy Coach" />
+      <label>Select coach</label>
+      <select id="coachName" style="width:100%;padding:8px 10px;font-size:13px;border:1px solid #ddd;border-radius:7px;background:#fafaf8;color:#1a1a18;font-family:inherit;outline:none;">
+        <option value="">— Select a coach —</option>
+        <option value="Prerna LivEzy Coach">Prerna</option>
+        <option value="Geo Thomas Liv Ezy Coach">Geo</option>
+        <option value="Vishal Singh LivEzy Coach">Vishal</option>
+        <option value="Coach Giko Livezy">Giko</option>
+        <option value="Subir LivEzy Coach">Subir</option>
+        <option value="Raghu LivEzy Coach">Raghu</option>
+        <option value="Angie LivEzy Coach">Angie</option>
+        <option value="Sanju LivEzy Coach">Sanju</option>
+        <option value="Ashrith LivEzy Coach">Ashrith</option>
+        <option value="Vaibhavi LivEzy Coach">Vaibhavi</option>
+        <option value="Swaathish LivEzy Coach">Swaathish</option>
+        <option value="Vijay Agnel | LivEzy Coach">Vijay</option>
+        <option value="Suvendu Ghosh LivEzy Coach">Suvendu</option>
+        <option value="Vindya LivEzy Coach">Vindya</option>
+        <option value="Aishwarya LivEzy Coach">Aishwarya</option>
+        <option value="Ashwini LivEzy Coach">Ashwini</option>
+        <option value="Varsha LivEzy Coach">Varsha</option>
+        <option value="Harish Livezy Coach">Harish</option>
+      </select>
     </div>
-
     <div class="section-label">Compliance period</div>
     <div class="field">
-      <label>Start</label>
-      <input type="datetime-local" id="startDate" />
+      <label>Start date</label>
+      <input type="date" id="startDate" />
     </div>
     <div class="field">
-      <label>End</label>
-      <input type="datetime-local" id="endDate" />
+      <label>End date</label>
+      <input type="date" id="endDate" />
     </div>
 
     <div class="section-label">Public holidays</div>
@@ -466,8 +485,8 @@ async function runAnalysis() {
   document.getElementById('errorBox').style.display = 'none';
   invalidBreaches = new Set();
 
-  const coachName = document.getElementById('coachName').value.trim();
-  if (!coachName) { showError('Please enter the coach name.'); return; }
+  const coachName = document.getElementById('coachName').value;
+  if (!coachName) { showError('Please select a coach.'); return; }
   if (!chatFiles.length) { showError('Please upload at least one chat file.'); return; }
 
   const btn = document.getElementById('runBtn');
@@ -491,8 +510,8 @@ async function runAnalysis() {
 
   const startVal = document.getElementById('startDate').value;
   const endVal = document.getElementById('endDate').value;
-  const startDt = startVal ? new Date(startVal) : null;
-  const endDt = endVal ? new Date(endVal) : null;
+  const startDt = startVal ? new Date(startVal + 'T00:00:00') : null;
+  const endDt = endVal ? new Date(endVal + 'T23:59:59') : null;
 
   const holidaySet = new Set(holidays);
   const coachKey = normSender(coachName);
