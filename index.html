@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Liv Ezy Coach Compliance</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; background: #f5f4f0; color: #1a1a18; min-height: 100vh; }
+
+.topbar { background: #1a1a18; color: #f5f4f0; padding: 0 2rem; height: 52px; display: flex; align-items: center; gap: 12px; }
+.topbar .logo { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+.topbar .sub { font-size: 12px; color: #888; margin-left: 4px; }
+
+.layout { display: grid; grid-template-columns: 360px 1fr; min-height: calc(100vh - 52px); }
+
+.sidebar { background: #fff; border-right: 1px solid #e8e6e0; padding: 1.5rem; overflow-y: auto; }
+.main { padding: 1.5rem; overflow-y: auto; }
+
+.section-label { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #999; margin-bottom: 10px; margin-top: 1.5rem; }
+.section-label:first-child { margin-top: 0; }
+
+.field { margin-bottom: 14px; }
+.field label { display: block; font-size: 12px; color: #666; margin-bottom: 5px; font-weight: 500; }
+.field input[type="text"],
+.field input[type="datetime-local"] {
+  width: 100%; padding: 8px 10px; font-size: 13px;
+  border: 1px solid #ddd; border-radius: 7px;
+  background: #fafaf8; color: #1a1a18; font-family: inherit;
+  outline: none; transition: border-color 0.15s;
+}
+.field input:focus { border-color: #999; background: #fff; }
+
+.upload-zone {
+  border: 1.5px dashed #ccc; border-radius: 8px; padding: 1.25rem;
+  text-align: center; cursor: pointer; background: #fafaf8;
+  transition: all 0.15s; user-select: none;
+}
+.upload-zone:hover, .upload-zone.drag { border-color: #1a1a18; background: #f0efe9; }
+.upload-zone .icon { font-size: 22px; margin-bottom: 6px; }
+.upload-zone p { font-size: 12px; color: #888; margin-top: 4px; }
+.upload-zone .count { font-size: 12px; font-weight: 600; color: #1a1a18; margin-top: 6px; }
+
+.file-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.chip { font-size: 11px; padding: 3px 8px; background: #f0efe9; border: 1px solid #e0dfd8; border-radius: 99px; color: #555; }
+
+.info-box { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 7px; padding: 10px 12px; font-size: 12px; color: #0369a1; margin-bottom: 14px; line-height: 1.5; }
+
+.btn-run {
+  width: 100%; padding: 10px; font-size: 14px; font-weight: 600;
+  background: #1a1a18; color: #f5f4f0; border: none; border-radius: 8px;
+  cursor: pointer; margin-top: 1rem; transition: opacity 0.15s;
+  letter-spacing: -0.01em;
+}
+.btn-run:hover { opacity: 0.85; }
+.btn-run:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.error-box { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 7px; padding: 10px 12px; font-size: 13px; color: #b91c1c; margin-top: 12px; line-height: 1.5; }
+
+.empty-state { text-align: center; padding: 5rem 2rem; color: #aaa; }
+.empty-state .big { font-size: 40px; margin-bottom: 1rem; }
+.empty-state p { font-size: 14px; }
+
+.metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 1.5rem; }
+.metric { background: #fff; border: 1px solid #e8e6e0; border-radius: 10px; padding: 1.1rem 1.25rem; }
+.metric .val { font-size: 28px; font-weight: 700; letter-spacing: -0.03em; }
+.metric .lbl { font-size: 11px; color: #888; margin-top: 4px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+.metric.danger .val { color: #dc2626; }
+
+.card { background: #fff; border: 1px solid #e8e6e0; border-radius: 10px; overflow: hidden; }
+.card-head { padding: 1rem 1.25rem; border-bottom: 1px solid #e8e6e0; display: flex; align-items: center; justify-content: space-between; }
+.card-head h3 { font-size: 14px; font-weight: 600; }
+.card-head .hint { font-size: 12px; color: #aaa; }
+
+table { width: 100%; border-collapse: collapse; }
+thead th { font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: #999; padding: 10px 14px; text-align: left; border-bottom: 1px solid #e8e6e0; background: #fafaf8; }
+tbody td { padding: 11px 14px; border-bottom: 1px solid #f0efe9; vertical-align: middle; font-size: 13px; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr.invalid td { opacity: 0.35; }
+
+.badge { display: inline-flex; align-items: center; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 99px; letter-spacing: 0.03em; }
+.badge.breach { background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
+.badge.invalid { background: #f5f4f0; color: #999; border: 1px solid #e0dfd8; }
+
+.mono { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+
+.toggle-btn { font-size: 11px; font-weight: 500; padding: 4px 10px; border: 1px solid #ddd; border-radius: 99px; background: transparent; color: #555; cursor: pointer; white-space: nowrap; }
+.toggle-btn:hover { background: #f5f4f0; border-color: #999; }
+
+.recalc-note { padding: 10px 1.25rem; font-size: 12px; color: #888; background: #fafaf8; border-top: 1px solid #e8e6e0; }
+.no-breaches { padding: 2rem; text-align: center; font-size: 13px; color: #aaa; }
+
+.spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.65s linear infinite; vertical-align: middle; margin-right: 6px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.holidays-list { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.holiday-chip { display: flex; align-items: center; gap: 5px; font-size: 12px; padding: 4px 8px; background: #fef9ec; border: 1px solid #fcd34d; border-radius: 99px; color: #92400e; }
+.holiday-chip button { background: none; border: none; cursor: pointer; color: #92400e; font-size: 14px; line-height: 1; padding: 0; opacity: 0.6; }
+.holiday-chip button:hover { opacity: 1; }
+
+.add-holiday-row { display: flex; gap: 8px; margin-top: 8px; }
+.add-holiday-row input { flex: 1; }
+.add-holiday-row button { padding: 8px 14px; font-size: 13px; font-weight: 500; border: 1px solid #ddd; border-radius: 7px; background: #fafaf8; cursor: pointer; white-space: nowrap; }
+.add-holiday-row button:hover { background: #f0efe9; }
+
+@media (max-width: 800px) {
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { border-right: none; border-bottom: 1px solid #e8e6e0; }
+  .metrics { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">Liv Ezy Coach Compliance</div>
+  <div class="sub">Response time analyser</div>
+</div>
+
+<div class="layout">
+  <div class="sidebar">
+
+    <div class="section-label">Coach</div>
+    <div class="field">
+      <label>Coach name (exactly as in chat export)</label>
+      <input type="text" id="coachName" placeholder="e.g. Aishwarya LivEzy Coach" />
+    </div>
+
+    <div class="section-label">Compliance period</div>
+    <div class="field">
+      <label>Start</label>
+      <input type="datetime-local" id="startDate" />
+    </div>
+    <div class="field">
+      <label>End</label>
+      <input type="datetime-local" id="endDate" />
+    </div>
+
+    <div class="section-label">Public holidays</div>
+    <div class="add-holiday-row">
+      <input type="date" id="holidayInput" />
+      <button onclick="addHoliday()">Add</button>
+    </div>
+    <div class="holidays-list" id="holidayList"></div>
+
+    <div class="section-label">Exemptions</div>
+    <div class="info-box">
+      Loaded automatically from your exemptions sheet. Update the sheet anytime — changes reflect immediately on the next run.
+    </div>
+
+    <div class="section-label">Chat files</div>
+    <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+      <div class="icon">📂</div>
+      <div style="font-size:13px;font-weight:500;">Click to upload or drag & drop</div>
+      <p>WhatsApp .txt exports — multiple files supported</p>
+      <div class="count" id="fileCount"></div>
+    </div>
+    <input type="file" id="fileInput" multiple accept=".txt" style="display:none" />
+    <div class="file-chips" id="fileList"></div>
+
+    <div id="errorBox" style="display:none" class="error-box"></div>
+    <button class="btn-run" id="runBtn" onclick="runAnalysis()">Run Analysis</button>
+  </div>
+
+  <div class="main">
+    <div class="empty-state" id="emptyState">
+      <div class="big">📊</div>
+      <p>Fill in the details on the left and upload chat files to run the analysis.</p>
+    </div>
+    <div id="results" style="display:none">
+      <div class="metrics">
+        <div class="metric">
+          <div class="val" id="mArt">—</div>
+          <div class="lbl">Avg response time (mins)</div>
+        </div>
+        <div class="metric">
+          <div class="val" id="mResponses">—</div>
+          <div class="lbl">Responses counted</div>
+        </div>
+        <div class="metric danger">
+          <div class="val" id="mBreaches">—</div>
+          <div class="lbl">SLA breaches (&gt;210 mins)</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h3>Breach details</h3>
+          <div class="hint">Click "Mark invalid" to exclude from metrics</div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>File</th>
+                <th>Client message time</th>
+                <th>Coach reply time</th>
+                <th>Mins</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="breachBody"></tbody>
+          </table>
+          <div class="no-breaches" id="noBreaches" style="display:none">✓ No breaches found</div>
+        </div>
+        <div class="recalc-note" id="recalcNote" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Embedded exemptions URL ──────────────────────────────────────────────────
+const EXEMPTIONS_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRZu0Oxsalq0no_h2bAAcCZkOnPs6QUjE63OqkxfMzEmiPoA25u1UpEnZZxzfchmdu1kdn0lNjtG077/pub?gid=660482460&single=true&output=csv";
+const SLA_LIMIT = 210;
+
+// ── Word lists ───────────────────────────────────────────────────────────────
+const NO_REPLY_NEEDED = new Set([
+  "ok","okay","ok!","okay!","k","kk","yes","yes!","yep","yup","yup!",
+  "yeah","yeah!","ya","yea","ye",
+  "sure","sure!","alright","alright!","aye","right","correct","exactly",
+  "indeed","absolutely","definitely","of course","certainly",
+  "noted","got it","got it!","understood","understood!","i understand",
+  "i see","i see!","makes sense","clear","all clear","sounds good",
+  "sounds great","sounds good!","sounds great!","will do","will do!",
+  "will check","will check!","checking","on it","on it!",
+  "thanks","thanks!","thank you","thank you!","ty","tq","thx","thanx",
+  "thank u","many thanks","much appreciated","appreciated",
+  "cool","cool!","great","great!","perfect","perfect!","awesome","awesome!",
+  "nice","nice!","good","good!","excellent","excellent!","wonderful",
+  "fantastic","brilliant","superb","wow","wow!",
+  "no problem","no worries","no issue","np","nw","np!","nw!",
+  "all good","all good!","sure thing","sure thing!","no rush","take your time",
+  "done","done!","completed","received","seen","read"
+]);
+
+const INVALID_COACH_EXACT = new Set(["ok","okay"]);
+const INVALID_COACH_PREFIX = [
+  "hi","hey","hello","gm","good morning","morning",
+  "noted","ok noted","on leave","medical leave","leave today","not available today",
+  "i'll get back","i will get back","checking this"
+];
+
+const WA_PATTERN = /^[\u200e\u200f\u202a-\u202e\u2066-\u2069]*\[(\d{1,2}\/\d{1,2}\/\d{2,4}),\s*(\d{1,2}:\d{2}:\d{2}\s?[AP]M)\]\s(.*?):\s(.*)$/;
+
+// ── State ────────────────────────────────────────────────────────────────────
+let chatFiles = [];
+let holidays = [];
+let allResults = null;
+let invalidBreaches = new Set();
+
+// ── Holiday UI ───────────────────────────────────────────────────────────────
+function addHoliday() {
+  const input = document.getElementById('holidayInput');
+  const val = input.value;
+  if (!val || holidays.includes(val)) return;
+  holidays.push(val);
+  input.value = '';
+  renderHolidays();
+}
+function removeHoliday(val) {
+  holidays = holidays.filter(h => h !== val);
+  renderHolidays();
+}
+function renderHolidays() {
+  document.getElementById('holidayList').innerHTML = holidays.map(h =>
+    `<div class="holiday-chip">${formatDateDisplay(h)}<button onclick="removeHoliday('${h}')">×</button></div>`
+  ).join('');
+}
+function formatDateDisplay(iso) {
+  const [y,m,d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+// ── File handling ────────────────────────────────────────────────────────────
+document.getElementById('fileInput').addEventListener('change', e => handleFiles(e.target.files));
+const dropZone = document.getElementById('dropZone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag'); handleFiles(e.dataTransfer.files); });
+
+function handleFiles(files) {
+  chatFiles = Array.from(files).filter(f => f.name.toLowerCase().endsWith('.txt'));
+  document.getElementById('fileCount').textContent = chatFiles.length + ' file(s) selected';
+  document.getElementById('fileList').innerHTML = chatFiles.map(f => `<span class="chip">${f.name}</span>`).join('');
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function normSender(s) { return (s||'').replace(/[^a-zA-Z0-9 ]/g,'').toLowerCase().trim(); }
+
+function normMsg(msg) {
+  msg = (msg||'').trim();
+  if (!msg) return '';
+  const ml = msg.toLowerCase().trim();
+  if (ml.includes('omitted') || ml.includes('attached:')) return '<media omitted>';
+  return ml;
+}
+
+function requiresReply(message) {
+  const m = normMsg(message);
+  if (!m) return false;
+  if (m === 'gif omitted' || m === 'sticker omitted') return false;
+  if (NO_REPLY_NEEDED.has(m)) return false;
+  for (const x of NO_REPLY_NEEDED) { if (m.startsWith(x + ' ')) return false; }
+  return true;
+}
+
+function isValidCoachReply(message) {
+  const m = normMsg(message);
+  if (!m) return false;
+  if (INVALID_COACH_EXACT.has(m)) return false;
+  for (const p of INVALID_COACH_PREFIX) { if (m === p || m.startsWith(p + ' ')) return false; }
+  return true;
+}
+
+function parseWADate(dStr, tStr) {
+  const [d,mo,y] = dStr.split('/').map(Number);
+  const year = y < 100 ? 2000+y : y;
+  const tClean = tStr.trim();
+  const isPM = /PM/i.test(tClean), isAM = /AM/i.test(tClean);
+  let [hh,mm,ss] = tClean.replace(/\s?[AP]M/i,'').trim().split(':').map(Number);
+  if (isPM && hh !== 12) hh += 12;
+  if (isAM && hh === 12) hh = 0;
+  return new Date(year, mo-1, d, hh, mm, ss||0);
+}
+
+function parseFlexDate(s) {
+  if (!s) return null;
+  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m) return new Date(+m[1], +m[2]-1, +m[3]);
+  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  if (m) { const y = +m[3] < 100 ? 2000+ +m[3] : +m[3]; return new Date(y, +m[2]-1, +m[1]); }
+  return null;
+}
+
+function parseTime(s) {
+  if (!s) return null;
+  const parts = s.split(':').map(Number);
+  return parts.length < 2 ? null : parts[0]*60 + parts[1];
+}
+
+function dateKey(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function fmtTs(ts) {
+  const p = n => String(n).padStart(2,'0');
+  return `${ts.getFullYear()}-${p(ts.getMonth()+1)}-${p(ts.getDate())} ${p(ts.getHours())}:${p(ts.getMinutes())}:${p(ts.getSeconds())}`;
+}
+
+// ── Exemptions parser ────────────────────────────────────────────────────────
+function parseExemptions(csvText, coachKey) {
+  const leaves = new Set(), halfDays = {};
+  if (!csvText.trim()) return { leaves, halfDays };
+  const lines = csvText.trim().split('\n');
+  const headers = lines[0].split(',').map(s => s.trim().toLowerCase());
+  const idx = h => headers.indexOf(h);
+  const iCoach=idx('coach_name'), iDate=idx('date'), iType=idx('type'), iStart=idx('start_time'), iEnd=idx('end_time');
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(',').map(s => s.trim());
+    if (iCoach >= 0) {
+      const cn = normSender(cols[iCoach]||'');
+      if (!coachKey.includes(cn) && !cn.includes(coachKey)) continue;
+    }
+    const dRaw = cols[iDate]||'', tRaw = (cols[iType]||'').toLowerCase();
+    const d = parseFlexDate(dRaw);
+    if (!d) continue;
+    const k = dateKey(d);
+    if (tRaw.includes('leave')) { leaves.add(k); continue; }
+    if (tRaw.includes('half')) {
+      const st = parseTime(cols[iStart]||''), en = parseTime(cols[iEnd]||'');
+      if (st !== null && en !== null && en > st) halfDays[k] = { start: st, end: en };
+    }
+  }
+  return { leaves, halfDays };
+}
+
+// ── Shift logic ──────────────────────────────────────────────────────────────
+function getWorkWindow(d, exemptions, holidaySet) {
+  const k = dateKey(d);
+  if (holidaySet.has(k) || exemptions.leaves.has(k)) return null;
+  const dow = d.getDay();
+  if (dow === 0) return null;
+  let start = (dow === 6) ? 10*60 : 8*60, end = 14*60;
+  if (exemptions.halfDays[k]) { start = exemptions.halfDays[k].start; end = exemptions.halfDays[k].end; }
+  if (end <= start) return null;
+  const sd = new Date(d); sd.setHours(Math.floor(start/60), start%60, 0, 0);
+  const ed = new Date(d); ed.setHours(Math.floor(end/60), end%60, 0, 0);
+  return { start: sd, end: ed };
+}
+
+function isInWorkWindow(ts, exemptions, holidaySet) {
+  const win = getWorkWindow(new Date(ts.getFullYear(), ts.getMonth(), ts.getDate()), exemptions, holidaySet);
+  return win ? ts >= win.start && ts <= win.end : false;
+}
+
+function nextWorkStart(d, exemptions, holidaySet) {
+  let cur = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  while (true) {
+    const win = getWorkWindow(cur, exemptions, holidaySet);
+    if (win) return win.start;
+    cur = new Date(cur.getTime() + 86400000);
+  }
+}
+
+function normalizeEffective(ts, exemptions, holidaySet) {
+  const d = new Date(ts.getFullYear(), ts.getMonth(), ts.getDate());
+  const win = getWorkWindow(d, exemptions, holidaySet);
+  if (!win) return nextWorkStart(d, exemptions, holidaySet);
+  if (ts < win.start) return win.start;
+  if (ts > win.end) return nextWorkStart(new Date(d.getTime()+86400000), exemptions, holidaySet);
+  return ts;
+}
+
+function workingMinsBetween(start, end, exemptions, holidaySet) {
+  if (end <= start) return 0;
+  let total = 0;
+  let cur = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+  const last = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+  while (cur <= last) {
+    const win = getWorkWindow(cur, exemptions, holidaySet);
+    if (win) {
+      let s = new Date(Math.max(win.start, cur.toDateString() === start.toDateString() ? start : win.start));
+      let e = new Date(Math.min(win.end, cur.toDateString() === end.toDateString() ? end : win.end));
+      if (e > s) total += Math.floor((e - s) / 60000);
+    }
+    cur = new Date(cur.getTime() + 86400000);
+  }
+  return total;
+}
+
+// ── Chat parser ──────────────────────────────────────────────────────────────
+function parseChat(text, startDt, endDt) {
+  const msgs = [];
+  for (const line of text.split('\n')) {
+    const m = line.replace(/\r/,'').match(WA_PATTERN);
+    if (!m) continue;
+    const [,dStr,tStr,sender,message] = m;
+    const ts = parseWADate(dStr, tStr);
+    if (isNaN(ts)) continue;
+    if (startDt && ts < startDt) continue;
+    if (endDt && ts > endDt) continue;
+    msgs.push({ ts, sender: String(sender), text: String(message) });
+  }
+  return msgs.sort((a,b) => a.ts - b.ts);
+}
+
+function readFile(f) {
+  return new Promise((res,rej) => {
+    const r = new FileReader();
+    r.onload = e => res(e.target.result);
+    r.onerror = rej;
+    r.readAsText(f, 'utf-8');
+  });
+}
+
+function showError(msg) {
+  const b = document.getElementById('errorBox');
+  b.innerHTML = msg; b.style.display = 'block';
+}
+
+// ── Main analysis ────────────────────────────────────────────────────────────
+async function runAnalysis() {
+  document.getElementById('errorBox').style.display = 'none';
+  invalidBreaches = new Set();
+
+  const coachName = document.getElementById('coachName').value.trim();
+  if (!coachName) { showError('Please enter the coach name.'); return; }
+  if (!chatFiles.length) { showError('Please upload at least one chat file.'); return; }
+
+  const btn = document.getElementById('runBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Loading exemptions...';
+
+  // Fetch exemptions live from Google Sheet
+  let exemptionsCsv = '';
+  try {
+    const resp = await fetch(EXEMPTIONS_URL);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    exemptionsCsv = await resp.text();
+  } catch(e) {
+    showError('Could not load exemptions sheet. Check your internet connection and try again.<br><small>' + e.message + '</small>');
+    btn.disabled = false;
+    btn.innerHTML = 'Run Analysis';
+    return;
+  }
+
+  btn.innerHTML = '<span class="spinner"></span>Analysing chats...';
+
+  const startVal = document.getElementById('startDate').value;
+  const endVal = document.getElementById('endDate').value;
+  const startDt = startVal ? new Date(startVal) : null;
+  const endDt = endVal ? new Date(endVal) : null;
+
+  const holidaySet = new Set(holidays);
+  const coachKey = normSender(coachName);
+  const exemptions = parseExemptions(exemptionsCsv, coachKey);
+
+  const responseTimes = [], breaches = [];
+
+  for (const f of chatFiles) {
+    const text = await readFile(f);
+    const msgs = parseChat(text, startDt, endDt);
+    let pending = false, pendingEff = null;
+
+    for (const msg of msgs) {
+      const isCoach = normSender(msg.sender) === coachKey;
+      if (!isCoach && requiresReply(msg.text)) {
+        if (!pending) { pending = true; pendingEff = normalizeEffective(msg.ts, exemptions, holidaySet); }
+        continue;
+      }
+      if (isCoach && pending && isValidCoachReply(msg.text)) {
+        if (isInWorkWindow(msg.ts, exemptions, holidaySet)) {
+          const mins = workingMinsBetween(pendingEff, msg.ts, exemptions, holidaySet);
+          responseTimes.push(mins);
+          if (mins > SLA_LIMIT) breaches.push({ file: f.name, clientTs: pendingEff, coachTs: msg.ts, mins });
+        }
+        pending = false; pendingEff = null;
+      }
+    }
+  }
+
+  allResults = { responseTimes, breaches };
+  btn.disabled = false;
+  btn.innerHTML = 'Run Analysis';
+  document.getElementById('emptyState').style.display = 'none';
+  renderResults();
+}
+
+// ── Render ───────────────────────────────────────────────────────────────────
+function renderResults() {
+  const { responseTimes, breaches } = allResults;
+  const art = responseTimes.length ? (responseTimes.reduce((a,b)=>a+b,0)/responseTimes.length).toFixed(1) : '—';
+  document.getElementById('mArt').textContent = art;
+  document.getElementById('mResponses').textContent = responseTimes.length;
+  document.getElementById('mBreaches').textContent = breaches.length;
+
+  const tbody = document.getElementById('breachBody');
+  if (!breaches.length) {
+    tbody.innerHTML = '';
+    document.getElementById('noBreaches').style.display = 'block';
+  } else {
+    document.getElementById('noBreaches').style.display = 'none';
+    tbody.innerHTML = breaches.map((b,i) => `
+      <tr id="brow-${i}">
+        <td style="color:#aaa;font-weight:600">${i+1}</td>
+        <td class="mono">${b.file}</td>
+        <td class="mono">${fmtTs(b.clientTs)}</td>
+        <td class="mono">${fmtTs(b.coachTs)}</td>
+        <td style="font-weight:700">${b.mins}</td>
+        <td><span class="badge breach">Breach</span></td>
+        <td><button class="toggle-btn" onclick="toggleBreach(${i})">Mark invalid</button></td>
+      </tr>`).join('');
+  }
+  document.getElementById('recalcNote').style.display = 'none';
+  document.getElementById('results').style.display = 'block';
+}
+
+function toggleBreach(i) {
+  if (invalidBreaches.has(i)) invalidBreaches.delete(i); else invalidBreaches.add(i);
+  const inv = invalidBreaches.has(i);
+  const row = document.getElementById('brow-'+i);
+  row.className = inv ? 'invalid' : '';
+  row.querySelector('.badge').className = 'badge '+(inv?'invalid':'breach');
+  row.querySelector('.badge').textContent = inv ? 'Invalid' : 'Breach';
+  row.querySelector('.toggle-btn').textContent = inv ? 'Restore' : 'Mark invalid';
+  recalcMetrics();
+}
+
+function recalcMetrics() {
+  const { responseTimes, breaches } = allResults;
+  let tempInv = [...invalidBreaches].map(i => breaches[i].mins);
+  const adjTimes = responseTimes.filter(m => {
+    const i = tempInv.indexOf(m);
+    if (i >= 0) { tempInv.splice(i,1); return false; }
+    return true;
+  });
+  const validBreaches = breaches.filter((_,i) => !invalidBreaches.has(i));
+  const art = adjTimes.length ? (adjTimes.reduce((a,b)=>a+b,0)/adjTimes.length).toFixed(1) : '—';
+  document.getElementById('mArt').textContent = art;
+  document.getElementById('mResponses').textContent = adjTimes.length;
+  document.getElementById('mBreaches').textContent = validBreaches.length;
+  const note = document.getElementById('recalcNote');
+  if (invalidBreaches.size > 0) {
+    note.style.display = 'block';
+    note.textContent = invalidBreaches.size + ' breach(es) marked invalid — excluded from all metrics.';
+  } else {
+    note.style.display = 'none';
+  }
+}
+</script>
+</body>
+</html>
