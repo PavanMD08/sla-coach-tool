@@ -90,6 +90,20 @@ tbody tr.invalid td { opacity: 0.35; }
 .recalc-note { padding: 10px 1.25rem; font-size: 12px; color: #888; background: #fafaf8; border-top: 1px solid #e8e6e0; }
 .no-breaches { padding: 2rem; text-align: center; font-size: 13px; color: #aaa; }
 
+.expand-row td { padding: 0 !important; border-bottom: 1px solid #e8e6e0 !important; }
+.expand-inner { display: none; padding: 14px 16px; background: #fafaf8; }
+.expand-inner.open { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.msg-block { border-radius: 8px; padding: 12px; }
+.msg-block.client { background: #f0f9ff; border: 1px solid #bae6fd; }
+.msg-block.coach { background: #f0fdf4; border: 1px solid #86efac; }
+.msg-block .msg-label { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
+.msg-block.client .msg-label { color: #0369a1; }
+.msg-block.coach .msg-label { color: #15803d; }
+.msg-block .msg-text { font-size: 13px; line-height: 1.5; color: #1a1a18; word-break: break-word; }
+.msg-block .msg-time { font-size: 11px; color: #999; margin-top: 6px; font-family: 'SF Mono', monospace; }
+.expand-btn { font-size: 11px; font-weight: 500; padding: 4px 10px; border: 1px solid #ddd; border-radius: 99px; background: transparent; color: #555; cursor: pointer; white-space: nowrap; }
+.expand-btn:hover { background: #f5f4f0; border-color: #999; }
+
 .spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.65s linear infinite; vertical-align: middle; margin-right: 6px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -137,7 +151,7 @@ tbody tr.invalid td { opacity: 0.35; }
         <option value="Vaibhavi LivEzy Coach">Vaibhavi</option>
         <option value="Swaathish LivEzy Coach">Swaathish</option>
         <option value="Vijay Agnel | LivEzy Coach">Vijay</option>
-        <option value="Suvendu Ghosh Livezy coach">Suvendu</option>
+        <option value="Suvendu Ghosh LivEzy Coach">Suvendu</option>
         <option value="Vindya LivEzy Coach">Vindya</option>
         <option value="Aishwarya LivEzy Coach">Aishwarya</option>
         <option value="Ashwini LivEzy Coach">Ashwini</option>
@@ -522,21 +536,25 @@ async function runAnalysis() {
   for (const f of chatFiles) {
     const text = await readFile(f);
     const msgs = parseChat(text, startDt, endDt);
-    let pending = false, pendingEff = null;
+    let pending = false, pendingEff = null, pendingClientMsg = null;
 
     for (const msg of msgs) {
       const isCoach = normSender(msg.sender) === coachKey;
       if (!isCoach && requiresReply(msg.text)) {
-        if (!pending) { pending = true; pendingEff = normalizeEffective(msg.ts, exemptions, holidaySet); }
+        if (!pending) {
+          pending = true;
+          pendingEff = normalizeEffective(msg.ts, exemptions, holidaySet);
+          pendingClientMsg = msg.text;
+        }
         continue;
       }
       if (isCoach && pending && isValidCoachReply(msg.text)) {
         if (isInWorkWindow(msg.ts, exemptions, holidaySet)) {
           const mins = workingMinsBetween(pendingEff, msg.ts, exemptions, holidaySet);
           responseTimes.push(mins);
-          if (mins > SLA_LIMIT) breaches.push({ file: f.name, clientTs: pendingEff, coachTs: msg.ts, mins });
+          if (mins > SLA_LIMIT) breaches.push({ file: f.name, clientTs: pendingEff, coachTs: msg.ts, mins, clientMsg: pendingClientMsg, coachMsg: msg.text });
         }
-        pending = false; pendingEff = null;
+        pending = false; pendingEff = null; pendingClientMsg = null;
       }
     }
   }
@@ -570,11 +588,42 @@ function renderResults() {
         <td class="mono">${fmtTs(b.coachTs)}</td>
         <td style="font-weight:700">${b.mins}</td>
         <td><span class="badge breach">Breach</span></td>
-        <td><button class="toggle-btn" onclick="toggleBreach(${i})">Mark invalid</button></td>
+        <td style="display:flex;gap:6px;">
+          <button class="expand-btn" onclick="toggleExpand(${i})" id="ebtn-${i}">▸ View messages</button>
+          <button class="toggle-btn" onclick="toggleBreach(${i})" id="tbtn-${i}">Mark invalid</button>
+        </td>
+      </tr>
+      <tr class="expand-row" id="erow-${i}">
+        <td colspan="7">
+          <div class="expand-inner" id="einner-${i}">
+            <div class="msg-block client">
+              <div class="msg-label">Client message</div>
+              <div class="msg-text">${escHtml(b.clientMsg)}</div>
+              <div class="msg-time">${fmtTs(b.clientTs)}</div>
+            </div>
+            <div class="msg-block coach">
+              <div class="msg-label">Coach reply</div>
+              <div class="msg-text">${escHtml(b.coachMsg)}</div>
+              <div class="msg-time">${fmtTs(b.coachTs)}</div>
+            </div>
+          </div>
+        </td>
       </tr>`).join('');
   }
   document.getElementById('recalcNote').style.display = 'none';
   document.getElementById('results').style.display = 'block';
+}
+
+function escHtml(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toggleExpand(i) {
+  const inner = document.getElementById('einner-'+i);
+  const btn = document.getElementById('ebtn-'+i);
+  const isOpen = inner.classList.contains('open');
+  inner.classList.toggle('open', !isOpen);
+  btn.textContent = isOpen ? '▸ View messages' : '▾ Hide messages';
 }
 
 function toggleBreach(i) {
@@ -584,7 +633,7 @@ function toggleBreach(i) {
   row.className = inv ? 'invalid' : '';
   row.querySelector('.badge').className = 'badge '+(inv?'invalid':'breach');
   row.querySelector('.badge').textContent = inv ? 'Invalid' : 'Breach';
-  row.querySelector('.toggle-btn').textContent = inv ? 'Restore' : 'Mark invalid';
+  document.getElementById('tbtn-'+i).textContent = inv ? 'Restore' : 'Mark invalid';
   recalcMetrics();
 }
 
